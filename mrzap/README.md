@@ -95,10 +95,10 @@ OIDC uses a client-provided nonce in the opening request for replay protection. 
 BastionZero sends the nonce in the following format:
 
 
-><code>Hash(PK<sub>C</sub>, CERrand, (CERrand)σ<sub>C</sub>)</code>, where <br>
-><code>PK<sub>C</sub></code> is the Client’s Public Key<br>
-><code>CERrand</code> is a random value<br>
-><code>(CERrand)σ<sub>C</sub></code> is the Client's signature on `CERrand`
+<code>Hash(PK<sub>C</sub>, CERrand, (CERrand)σ<sub>C</sub>)</code>, where <br>
+<code>PK<sub>C</sub></code> is the Client’s Public Key<br>
+<code>CERrand</code> is a random value<br>
+<code>(CERrand)σ<sub>C</sub></code> is the Client's signature on `CERrand`
 
 
 Hashing allows the information to fit protocol-defined size constraints, while the `CERrand` ensures replay protection is maintained.  Including both the user’s public key and signature over `CERrand` forces the SSO to publish the public key while proving the user's possession of the corresponding secret key.  
@@ -113,7 +113,7 @@ BastionZero Certificate (“BZCert”) validation includes verifying:
 
 1. A properly formatted nonce in the `SSO_com` including a valid signature on `CERrand`
 
-    ><code>Nonce = Hash(PK<sub>A</sub>, CERrand, (CERrand)σ<sub>A</sub>)</code>
+    <code>Nonce = Hash(PK<sub>A</sub>, CERrand, (CERrand)σ<sub>A</sub>)</code>
 2. An unexpired, valid `SSO_id`
 3. A valid SSO provider’s signature on both the `SSO_com` and `SSO_id`
 4. That user’s organization (“org”) matches that expected by the Target 
@@ -138,16 +138,16 @@ The MrZAP Handshake convinces the Target of four things:
 4. The user possesses the corresponding secret key to the ephemeral public key presented in the BZCert.
 
 
-![MrZAP Handshake](diagrams/MrZAPHandshake.png)
+![MrZAP Handshake](diagrams/MRZAPHandshake.png)
 
 
 Where, 
 
-><code>BZCert<sub>c</sub></code> is the user’s identity certificate <br>
-><code>r<sub>c</sub></code> is a random value, chosen by the Client<br>
-><code>r<sub>t</sub></code> is a random value, chosen by the Target<br>
-><code>σ<sub>c</sub></code> is the Client’s signature over the message, <code>Sign(SK<sub>c</sub>, BZCert<sub>c</sub> || r<sub>c </sub>)</code><br>
-><code>σ<sub>t</sub></code> is the Target’s signature of the message, <code>Sign(SK<sub>t</sub>, H(SYN) || r<sub>t</sub>)</code>
+<code>BZCert<sub>c</sub></code> is the user’s identity certificate <br>
+<code>r<sub>c</sub></code> is a random value, chosen by the Client<br>
+<code>r<sub>t</sub></code> is a random value, chosen by the Target<br>
+<code>σ<sub>c</sub></code> is the Client’s signature over the message, <code>Sign(SK<sub>c</sub>, BZCert<sub>c</sub> || r<sub>c </sub>)</code><br>
+<code>σ<sub>t</sub></code> is the Target’s signature of the message, <code>Sign(SK<sub>t</sub>, H(SYN) || r<sub>t</sub>)</code>
 
 In the first message, called the SYN message, the Client sends the user’s BZCert, a random value, and a signature over the entire message to the Target.  After verifying the user’s BZCert, The Target responds with a SYN/ACK which includes an additional random value and a hash of the SYN message—omitting the signature from the hash calculation—and a signature over the entire message.  Then, the Client can continue communication by sending a DATA message.
 
