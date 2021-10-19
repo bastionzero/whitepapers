@@ -4,7 +4,22 @@ This living document serves as an overview of BastionZero’s zero-trust access 
 
 ![BastionZero Product Diagram](diagrams/BZProductDiagram.png)
 
-## 1 Introduction
+## Table of Contents
+- [1 Introduction](#1-introduction)
+- [2 The Protocol](#2-the-protocol)
+  * [2.1 Overview](#21-overview)
+  * [2.2 Multi Root Zero Trust](#22-multi-root-zero-trust)
+    + [2.2.1 What if BastionZero is compromised?](#221-what-if-bastionzero-is-compromised-)
+    + [2.2.2 What if the user’s SSO is compromised?](#222-what-if-the-user-s-sso-is-compromised-)
+    + [2.2.3 What if BastionZero and the user’s SSO are both compromised?](#223-what-if-bastionzero-and-the-user-s-sso-are-both-compromised-)
+  * [2.3 Identity Tokens](#23-identity-tokens)
+  * [2.4 BastionZero Certificate](#24-bastionzero-certificate)
+  * [2.5 The Handshake](#25-the-handshake)
+  * [2.6 Message Exchange](#26-message-exchange)
+  * [2.7 Attachment](#27-attachment)
+- [3 References](#3-references)
+
+# 1 Introduction
 
 BastionZero’s Multi Root ZeroTrust Access Protocol (MrZAP) is a zero-trust, authenticated messaging protocol for remote system access. Among its many uses, it is a secure, scalable, and highly manageable, modern replacement for Secure Shell (SSH).  SSH is a popular, existing solution for running shell commands on remote computers but requires burdensome key management and ties a user’s identity to that key, meaning that anyone with a given key can execute commands on the remote system.  
 
@@ -21,10 +36,10 @@ Each party member of the system can independently validate an incoming message a
 **Immutable Logs:** All messages sent by the user to the remote system are digitally signed and connected via message chain to create a real-time, independently-verifiable audit log that cannot be tampered with or altered even in the event of compromise.
 
 
-## 2 The Protocol
+# 2 The Protocol
 
 
-### 2.1 Overview
+## 2.1 Overview
 
 BastionZero’s Multi Root Zero-Trust Access Protocol (MrZAP) is an authenticated, signature-based access protocol.  A user logs in using their Client and sends a command to a remote computer, server, or system in the user’s environment (heretofore referred to as the “Target”); the Target independently verifies and authenticates the user’s identity, checks the digital signature on the command and then executes the command.  Every message is associated with the user’s identity and the antecedent message; no intermediary is able to impersonate the user.
 
@@ -39,7 +54,7 @@ The protocol starts with a two-message authenticating exchange, called the “Mr
 Every subsequent message is associated both with this initial handshake and the antecedent message by use of a hash pointer.  Messages are digitally signed by either the user or the Target, using their respective key pairs. The hash pointer allows for immutable logs and prevents BastionZero from reordering, manipulating, or removing messages while signatures prevent illegitimate actors from impersonating legitimate users.
 
 
-### 2.2 Multi Root Zero Trust
+## 2.2 Multi Root Zero Trust
 
 Engineers need access to remote resources with controls sufficient to reduce internal threats and a trust model to reduce external ones.  Availability, reliability, and security are paramount to any access tool, yet existing solutions to this problem congregate trust into a single point of compromise.
 
@@ -50,24 +65,24 @@ BastionZero’s protocol does not eliminate the need for trust, rather it minimi
 This distribution of trust means that there is no single point of compromise, and breaking the trust model would require multiple parties to conspire jointly to be successful.
 
 
-#### 2.2.1 What if BastionZero is compromised?
+### 2.2.1 What if BastionZero is compromised?
 
 If BastionZero and only BastionZero is compromised, then the attack model is limited.  Any actor with unfettered access to BastionZero will be able to read or block messages as they pass through.  However, the malicious actor would be unable to execute commands on a registered Target because they do not have an account with the Target’s associated SSO.  Targets will still require a valid and independently verifiable user in order to execute commands and, therefore, access will still be appropriately restricted and the authentication trust model will still hold.
 
 
-#### 2.2.2 What if the user’s SSO is compromised?
+### 2.2.2 What if the user’s SSO is compromised?
 
 If the user’s SSO is compromised but the user has additional, uncompromised MFA protection, then compromise of the user’s BastionZero account is not possible.  The customer’s SSO proves the user’s identity in relation to the external entity, but MFA is used to bolster that by forcing an additional factor of authentication to BastionZero itself.  Compromising the SSO would not give the malicious user access to the legitimate user’s MFA which would prevent them from successfully logging into BastionZero.
 
 
-#### 2.2.3 What if BastionZero and the user’s SSO are both compromised?
+### 2.2.3 What if BastionZero and the user’s SSO are both compromised?
 
 Only if BastionZero and the external SSO were compromised would a malicious user be able to successfully authenticate to BastionZero.  This is also assuming that in compromising BastionZero, the malicious actor removes any MFA authentication requirements.  Obtaining such access would indicate a more sophisticated attacker than one capable of solely achieving read-only access.  
 
 This scenario is improbable because it requires the compromise of multiple components of the system (SSO and BastionZero) which increases the difficulty and discoverability of the attack.  This increased complexity is the desirable consequence of the multi-root zero-trust nature of the MrZAP protocol, which means there is no single point of compromise.
 
 
-### 2.3 Identity Tokens
+## 2.3 Identity Tokens
 
 The Client’s identity is ensured by an external identity management system such as a company’s Single Sign-On provider (SSO). The MrZAP protocol relies on the use of OAuth tokens to communicate with these external SSOs in order to establish and decentralize trust.  
 
@@ -86,7 +101,7 @@ The opening OIDC request for an identity token is responded to with the `SSO_com
 Identity tokens have expiration dates and when one of these is reached, which may happen as frequently as every ten minutes, the user must renew their authorizing identity token to continue communicating with an application. The `SSO_refresh` refers to the long-lived refresh token a Client can use to get new identity tokens from the SSO without being re-prompted.
 
 
-### 2.4 BastionZero Certificate
+## 2.4 BastionZero Certificate
 
 There are two integral identities in MrZAP: the identity as defined by the user’s SSO and the cryptographic identity as defined by a public, secret key pair.  The former ensures legitimacy as a user of the application while the latter allows the user to sign messages and have signatures independently verified.
 
@@ -122,7 +137,7 @@ BastionZero Certificate (“BZCert”) validation includes verifying:
 Any change to the BZCert, such as the expiration of the SSO_id will require the creation of a new certificate. Each unique certificate requires its own handshake.
 
 
-### 2.5 The Handshake
+## 2.5 The Handshake
 
 Every message in the MrZAP protocol includes the hash of the previous message and the signature of the dispatching party.  However, hash chains require randomness in order to protect against replay attacks and signatures require verified identities to protect against access by unauthorized parties.
 
@@ -155,8 +170,7 @@ After verifying and before responding with a SYN/ACK, the Target will store the 
 
 Because BZCerts are constantly expiring—based on the lifetime of a single identity token (SSO_id)—the Client is constantly creating new certificates. The Client will initiate a new handshake for each unique BZCert so that the Target can properly verify and store it.
 
-
-### 2.6 Message Exchange
+## 2.6 Message Exchange
 
 The MrZAP messaging protocol uses 4 different types of messages: SYN, SYN/ACK, DATA, and DATA/ACK.  The SYN and SYN/ACK are used for the MrZAP Handshake, as detailed above, and all other communication takes the form of a DATA and DATA/ACK exchange.  Communication is driven by the Client, meaning SYN and DATA messages are reserved for their use while the SYN/ACK and DATA/ACK messages are both for use exclusively by the Target.
 
@@ -188,7 +202,7 @@ Similarly, if a Client wants to send keystrokes to the shell, they would specify
 ![Example Shell Input Exchange Diagram](diagrams/ShellInputExample.png)
 
 
-### 2.7 Attachment
+## 2.7 Attachment
 
 Although there are many use cases, the following attachment scenarios will focus on shell-related attachment.  
 
@@ -204,7 +218,7 @@ In the above example, Client A initiates a handshake and begins to send shell in
 
 
 <!-- Footnotes themselves at the bottom. -->
-## References
+# 3 References
 [OIDC Documentation](https://developers.google.com/identity/protocols/oauth2/openid-connect)
 
 [Edward's Curve 25519 Documentation](https://ed25519.cr.yp.to/)
